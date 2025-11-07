@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Aplikasi Menabung Simple</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Palet Warna Ungu Soft */
+        :root {
+            --primary-color: #9370DB; /* Medium Purple */
+            --primary-light: #C3B1E1; /* Lavender */
+            --primary-lighter: #E6E6FA; /* Lavender Blush/Light */
+            --text-color: #333;
+            --bg-color: #F8F8FF; /* Ghost White */
+            --danger-color: #DC143C; /* Crimson */
+            --success-color: #2E8B57; /* Sea Green */
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px var(--shadow-color); /* Shadow lebih menonjol */
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            grid-column: 1 / -1;
+            font-size: 2em;
+        }
+
+        /* --- Formulir & Data Rekap --- */
+        .input-section, .recap-section {
+            padding: 25px;
+            border-radius: 12px;
+            background-color: var(--primary-lighter);
+            transition: box-shadow var(--transition-speed);
+        }
+        
+        .input-section:hover, .recap-section:hover {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+
+        .input-section h2, .data-section h2, .chart-section h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            font-size: 1.5em;
+        }
+
+        /* Menggunakan Flexbox untuk form agar input dan label lebih rapi */
+        #formTransaksi {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* Jarak antar elemen form */
+        }
+
+        form label {
+            display: block;
+            margin-top: 5px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        form input[type="text"],
+        form input[type="number"],
+        form input[type="date"],
+        form select {
+            width: 100%; /* Disesuaikan untuk flexbox */
+            padding: 12px;
+            border: 1px solid var(--primary-light);
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        
+        form input:focus, form select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(147, 112, 219, 0.5);
+            outline: none;
+        }
+
+        /* Tombol Aksi */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        form button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            flex-grow: 1; /* Agar tombol mengisi ruang yang tersedia */
+            transition: background-color var(--transition-speed), transform 0.1s;
+        }
+
+        form button:hover {
+            background-color: #7b59d0;
+            transform: translateY(-1px);
+        }
+        
+        #cancelBtn {
+            background-color: gray;
+        }
+
+        #cancelBtn:hover {
+            background-color: #777;
+        }
+
+
+        /* --- Rekapitulasi Data --- */
+        .recap-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .recap-item {
+            padding: 18px;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            font-size: 1.2em;
+            border-left: 5px solid var(--primary-light); /* Garis penanda */
+        }
+
+        .recap-item span {
+            font-weight: bold;
+            color: var(--primary-color);
+            float: right; /* Angka saldo di sisi kanan */
+        }
+
+        /* --- Data Transaksi (Tabel CRUD) --- */
+        .data-section {
+            grid-column: 1 / -1;
+            margin-top: 30px;
+            overflow-x: auto; /* Penting untuk responsivitas tabel */
+        }
+
+        #dataTransaksi {
+            min-width: 700px; /* Pastikan tabel tidak terlalu sempit di layar kecil */
+            width: 100%;
+            border-collapse: separate; /* Mengganti collapse agar border-radius bisa diterapkan di sel header */
+            border-spacing: 0;
+            margin-top: 15px;
+            border-radius: 10px;
+            overflow: hidden; /* Menyembunyikan overflow agar border-radius bekerja */
+        }
+
+        #dataTransaksi th, #dataTransaksi td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--primary-light);
+            border-right: 1px solid var(--primary-light);
+        }
+
+        #dataTransaksi th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        #dataTransaksi th:last-child, #dataTransaksi td:last-child {
+            border-right: none;
+        }
+        
+        #dataTransaksi tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        #dataTransaksi tr:nth-child(even) {
+            background-color: var(--primary-lighter);
+        }
+
+        #dataTransaksi tr:hover {
+            background-color: var(--primary-light);
+        }
+
+        .action-btn {
+            padding: 8px 12px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            color: white;
+            font-weight: 600;
+            transition: background-color var(--transition-speed);
+        }
+
+        .edit-btn {
+            background-color: var(--success-color);
+        }
+
+        .edit-btn:hover {
+            background-color: #287a4a;
+        }
+
+        .delete-btn {
+            background-color: var(--danger-color);
+        }
+        
+        .delete-btn:hover {
+            background-color: #c10f32;
+        }
+
+
+        /* --- Grafik --- */
+        .chart-section {
+            grid-column: 1 / -1;
+            margin-top: 30px;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px var(--shadow-color);
+        }
+
+        /* Responsiveness */
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr; /* Stack layout in smaller screens */
+                gap: 20px;
+            }
+            
+            .data-section {
+                margin-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>💰 Aplikasi Catatan Menabung Sederhana</h1> 
+
+        <div class="input-section">
+            <h2>Tambah/Edit Transaksi</h2>
+            <form id="formTransaksi">
+                <input type="hidden" id="transaksiId">
+
+                <label for="tanggal">Tanggal:</label>
+                <input type="date" id="tanggal" required>
+
+                <label for="jenis">Jenis Transaksi:</label>
+                <select id="jenis" required>
+                    <option value="Menabung">Menabung</option>
+                    <option value="Penarikan">Penarikan</option>
+                </select>
+
+                <label for="jumlah">Jumlah (Rp):</label>
+                <input type="number" id="jumlah" min="1" required>
+
+                <label for="keterangan">Keterangan:</label>
+                <input type="text" id="keterangan">
+
+                <div class="button-group">
+                    <button type="submit" id="submitBtn">Tambah Transaksi</button>
+                    <button type="button" id="cancelBtn" style="display:none;">Batal Edit</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="recap-section">
+            <h2>Rekapitulasi Keuangan</h2>
+            <div class="recap-item">
+                Total Saldo: <span id="totalSaldo">Rp 0</span>
+            </div>
+            <div class="recap-item">
+                Total Menabung: <span id="totalMenabung">Rp 0</span>
+            </div>
+            <div class="recap-item">
+                Total Penarikan: <span id="totalPenarikan">Rp 0</span>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <h2>Riwayat Transaksi</h2>
+            <table id="dataTransaksi">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tanggal</th>
+                        <th>Jenis</th>
+                        <th>Jumlah (Rp)</th>
+                        <th>Keterangan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="chart-section">
+            <h2>Grafik Menabung per Bulan</h2>
+            <canvas id="tabunganChart"></canvas>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DATA FIKTIF ---
+        let transaksiData = [
+            { id: 1, tanggal: '2025-10-01', jenis: 'Menabung', jumlah: 50000, keterangan: 'Gaji Bulanan' },
+            { id: 2, tanggal: '2025-10-05', jenis: 'Menabung', jumlah: 25000, keterangan: 'Uang Saku' },
+            { id: 3, tanggal: '2025-10-15', jenis: 'Penarikan', jumlah: 10000, keterangan: 'Beli Buku' },
+            { id: 4, tanggal: '2025-11-02', jenis: 'Menabung', jumlah: 75000, keterangan: 'Bonus Proyek' },
+            { id: 5, tanggal: '2025-11-10', jenis: 'Menabung', jumlah: 30000, keterangan: 'Kembalian Belanja' },
+            { id: 6, tanggal: '2025-11-20', jenis: 'Penarikan', jumlah: 5000, keterangan: 'Donasi' },
+            { id: 7, tanggal: '2025-12-01', jenis: 'Menabung', jumlah: 100000, keterangan: 'Gaji Desember' },
+        ];
+
+        let nextId = transaksiData.length > 0 ? Math.max(...transaksiData.map(t => t.id)) + 1 : 1;
+
+        // Inisialisasi Chart
+        let tabunganChart;
+
+        // Fungsi untuk memuat data dari localStorage atau menggunakan data fiktif
+        function loadData() {
+            const storedData = localStorage.getItem('transaksiData');
+            const storedNextId = localStorage.getItem('nextId');
+            if (storedData) {
+                transaksiData = JSON.parse(storedData);
+            }
+            if (storedNextId) {
+                nextId = parseInt(storedNextId);
+            }
+        }
+
+        // Fungsi untuk menyimpan data ke localStorage
+        function saveData() {
+            localStorage.setItem('transaksiData', JSON.stringify(transaksiData));
+            localStorage.setItem('nextId', nextId);
+        }
+
+        // Fungsi untuk memformat angka menjadi format Rupiah
+        function formatRupiah(angka) {
+            // Memastikan angka adalah bilangan positif sebelum diformat
+            const positiveAngka = Math.abs(angka);
+            const formatted = 'Rp ' + positiveAngka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            return angka < 0 ? `(${formatted})` : formatted; // Tampilkan tanda kurung untuk nilai negatif (opsional)
+        }
+        
+        // Memperbaiki format Rupiah di chart agar tidak ada tanda kurung
+        function formatRupiahChart(angka) {
+             return 'Rp ' + Math.abs(angka).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+
+        // --- RENDER (Read) ---
+        function renderTransaksi() {
+            const tableBody = document.querySelector('#dataTransaksi tbody');
+            tableBody.innerHTML = '';
+            let totalSaldo = 0;
+            let totalMenabung = 0;
+            let totalPenarikan = 0;
+
+            // Urutkan berdasarkan tanggal terbaru
+            const sortedData = [...transaksiData].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+            sortedData.forEach(transaksi => {
+                const isMenabung = transaksi.jenis === 'Menabung';
+                const jumlah = isMenabung ? transaksi.jumlah : -transaksi.jumlah;
+
+                totalSaldo += jumlah;
+
+                if (isMenabung) {
+                    totalMenabung += transaksi.jumlah;
+                } else {
+                    totalPenarikan += transaksi.jumlah;
+                }
+
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = transaksi.id;
+                row.insertCell().textContent = transaksi.tanggal;
+                row.insertCell().textContent = transaksi.jenis;
+                row.insertCell().textContent = formatRupiahChart(transaksi.jumlah); // Tampilkan jumlah positif di tabel
+                row.insertCell().textContent = transaksi.keterangan;
+
+                const actionCell = row.insertCell();
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.className = 'action-btn edit-btn';
+                editBtn.onclick = () => editTransaksi(transaksi.id);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Hapus';
+                deleteBtn.className = 'action-btn delete-btn';
+                deleteBtn.onclick = () => deleteTransaksi(transaksi.id);
+
+                actionCell.appendChild(editBtn);
+                actionCell.appendChild(deleteBtn);
+            });
+
+            // Update Rekap
+            document.getElementById('totalSaldo').textContent = formatRupiah(totalSaldo);
+            document.getElementById('totalMenabung').textContent = formatRupiahChart(totalMenabung);
+            document.getElementById('totalPenarikan').textContent = formatRupiahChart(totalPenarikan);
+            
+            renderChart();
+        }
+
+        // --- CRUD Aksi ---
+
+        // (Create & Update)
+        document.getElementById('formTransaksi').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('transaksiId').value;
+            const tanggal = document.getElementById('tanggal').value;
+            const jenis = document.getElementById('jenis').value;
+            const jumlah = parseInt(document.getElementById('jumlah').value);
+            const keterangan = document.getElementById('keterangan').value;
+
+            const newTransaksi = {
+                tanggal,
+                jenis,
+                jumlah,
+                keterangan
+            };
+
+            if (id) {
+                // Update
+                const index = transaksiData.findIndex(t => t.id === parseInt(id));
+                if (index !== -1) {
+                    transaksiData[index] = { ...transaksiData[index], ...newTransaksi };
+                    alert('Transaksi berhasil diperbarui!');
+                }
+            } else {
+                // Create
+                newTransaksi.id = nextId++;
+                transaksiData.push(newTransaksi);
+                alert('Transaksi berhasil ditambahkan!');
+            }
+
+            saveData();
+            resetForm();
+            renderTransaksi();
+        });
+
+        // (Update - Isi Formulir)
+        function editTransaksi(id) {
+            const transaksi = transaksiData.find(t => t.id === id);
+            if (transaksi) {
+                document.getElementById('transaksiId').value = transaksi.id;
+                document.getElementById('tanggal').value = transaksi.tanggal;
+                document.getElementById('jenis').value = transaksi.jenis;
+                document.getElementById('jumlah').value = transaksi.jumlah;
+                document.getElementById('keterangan').value = transaksi.keterangan;
+
+                document.getElementById('submitBtn').textContent = 'Simpan Perubahan';
+                document.getElementById('cancelBtn').style.display = 'inline-block';
+            }
+        }
+
+        // (Delete)
+        function deleteTransaksi(id) {
+            if (confirm('Yakin ingin menghapus transaksi ini?')) {
+                transaksiData = transaksiData.filter(t => t.id !== id);
+                saveData();
+                renderTransaksi();
+                alert('Transaksi berhasil dihapus.');
+            }
+        }
+
+        // Fungsi Reset Formulir
+        function resetForm() {
+            document.getElementById('formTransaksi').reset();
+            document.getElementById('transaksiId').value = '';
+            document.getElementById('submitBtn').textContent = 'Tambah Transaksi';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+        document.getElementById('cancelBtn').addEventListener('click', resetForm);
+
+        // --- GRAFIK (Chart.js) ---
+        function renderChart() {
+            const dataPerBulan = {}; // { 'YYYY-MM': totalMenabung }
+
+            transaksiData.forEach(t => {
+                if (t.jenis === 'Menabung') {
+                    const monthYear = t.tanggal.substring(0, 7); // Ambil YYYY-MM
+                    dataPerBulan[monthYear] = (dataPerBulan[monthYear] || 0) + t.jumlah;
+                }
+            });
+
+            // Urutkan berdasarkan bulan
+            const labels = Object.keys(dataPerBulan).sort();
+            const dataPoints = labels.map(key => dataPerBulan[key]);
+            
+            // Format label bulan (contoh: 2025-10 -> Okt 2025)
+            const formattedLabels = labels.map(label => {
+                const [year, month] = label.split('-');
+                const date = new Date(year, month - 1);
+                return date.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
+            });
+
+
+            const ctx = document.getElementById('tabunganChart').getContext('2d');
+
+            if (tabunganChart) {
+                tabunganChart.destroy(); // Hapus chart lama sebelum membuat yang baru
+            }
+
+            tabunganChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: formattedLabels,
+                    datasets: [{
+                        label: 'Jumlah Menabung (Rp)',
+                        data: dataPoints,
+                        backgroundColor: 'var(--primary-color)',
+                        borderColor: 'var(--primary-color)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Jumlah (Rp)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatRupiahChart(value); // Menggunakan fungsi khusus untuk chart
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += formatRupiahChart(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- INTI APLIKASI ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderTransaksi();
+        });
+
+    </script>
+</body>
+</html>
